@@ -13,9 +13,13 @@ private:
 	CImage m_image;
 	CPoint m_pointCollection[3];
 	CPoint m_CircleCenterPoint;
+	COLORREF m_defaultCircleColor; // 점 및 라인 그리는 색상
+	COLORREF m_defaultInitColor;// 점 초기화 색상
 	int m_clicklimit;
-	
-	
+	int m_circleRadius;
+	int m_pointRadius;
+	int m_sizeThickness;
+	bool m_bLButtonDown;
 // 생성입니다.
 public:
 	CGlimCircleDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
@@ -31,6 +35,14 @@ public:
 // 구현입니다.
 private:
 	void CalculateCircleCenter();
+	void DrawPoint(unsigned char* fm, int x, int y, int nRadius, int nGray);
+	void DrawCircle(unsigned char* fm,CPoint centerPoint, int radius, int nGray);
+	void DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size,int nGray);
+	void EraseCircle();
+	void SetDrawArea();
+	void UpdateDisplay();
+	bool isInPoint(int i, int j, int nCenterX, int nCenterY, int nRadius);
+
 protected:
 	HICON m_hIcon;
 
@@ -43,5 +55,11 @@ protected:
 public:
 	afx_msg void OnBnClickedBtnTst();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
-	void DrawPoint(CDC* pDC, CImage& img, CPoint center, int radius);
+	afx_msg void OnBnClickedBtnInit();
+	afx_msg void OnBnClickedButtonPointsize();
+	afx_msg void OnBnClickedButtonCirclethickness();
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	CEdit m_CEditPointSize;
+	CEdit m_CEditCircleThickness;
 };

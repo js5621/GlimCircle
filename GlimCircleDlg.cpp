@@ -3,6 +3,7 @@
 //
 #include<cmath>
 #include<math.h>
+#define _USE_MATH_DEFINES
 
 #include "pch.h"
 #include "framework.h"
@@ -62,14 +63,20 @@ CGlimCircleDlg::CGlimCircleDlg(CWnd* pParent /*=nullptr*/)
 void CGlimCircleDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_Edit_PointSize, m_CEditPointSize);
+	DDX_Control(pDX, IDC_EDIT_CircleThickness, m_CEditCircleThickness);
 }
 
 BEGIN_MESSAGE_MAP(CGlimCircleDlg, CDialogEx)
 	ON_WM_SYSCOMMAND()
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
-	ON_BN_CLICKED(IDC_BTN_TST, &CGlimCircleDlg::OnBnClickedBtnTst)
 	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_MOUSEMOVE()
+	ON_BN_CLICKED(IDC_BTN_Init, &CGlimCircleDlg::OnBnClickedBtnInit)
+	ON_BN_CLICKED(IDC_BUTTON_PointSize, &CGlimCircleDlg::OnBnClickedButtonPointsize)
+	ON_BN_CLICKED(IDC_Button_CircleThickness, &CGlimCircleDlg::OnBnClickedButtonCirclethickness)
 END_MESSAGE_MAP()
 
 
@@ -105,7 +112,6 @@ BOOL CGlimCircleDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.
-
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
 
@@ -147,6 +153,7 @@ void CGlimCircleDlg::OnPaint()
 	}
 	else
 	{
+		SetDrawArea();
 		CDialogEx::OnPaint();
 	}
 }
@@ -157,66 +164,107 @@ HCURSOR CGlimCircleDlg::OnQueryDragIcon()
 {
 	return static_cast<HCURSOR>(m_hIcon);
 }
-
-void CGlimCircleDlg::OnBnClickedBtnTst()
+void CGlimCircleDlg::SetDrawArea()
 {
-	/*int nWidth= 20;
-	int nHeight = 20;
+	int nWidth = 500;
+	int nHeight = 480;
 	int nBpp = 8;
 
-	m_image.Create(nWidth, nHeight, nBpp);
-	int nRadius = min(nWidth / 2, nHeight / 2);
-	
-	CPoint ncPoint = CPoint(300, 300);
-	CDC* dc = GetDC();
+	m_image.Create(nWidth, -nHeight, nBpp);
+	if (nBpp == 8) {
+		static RGBQUAD rgb[256];
+		for (int i = 0; i < 256; i++)
+			rgb[i].rgbRed = rgb[i].rgbGreen = rgb[i].rgbBlue = i;
+		m_image.SetColorTable(0, 256, rgb);
+	}
 
-	DrawCircle(dc, m_image, ncPoint, nRadius);
-	*/
+	int nPitch = m_image.GetPitch();
+	unsigned char* fm = (unsigned char*)m_image.GetBits();
+
+	memset(fm, 0xff, nWidth * nHeight);
+	UpdateDisplay();
 }
 
-void CGlimCircleDlg::DrawPoint(CDC* pDC, CImage& img, CPoint origin, int radius)
+void CGlimCircleDlg::UpdateDisplay()
 {
-	int width = img.GetWidth();
-	int height = img.GetHeight();
+	CClientDC dc(this);
+	m_image.Draw(dc, 0, 0);
 
-	for (int x = 0; x < width; x++)
-	{
-		for (int y = 0; y < height; y++)
-		{
-			int dx = x - width / 2;
-			int dy = y - height / 2;
-			if (dx * dx + dy * dy <= (radius * radius))
+}
+
+
+void CGlimCircleDlg::DrawPoint(unsigned char* fm, int x, int y, int nRadius, int nGray)
+{
+	int nWidth = m_image.GetWidth();
+	int nHeight = m_image.GetHeight();
+	int nCenterX = x + nRadius;
+	int nCenterY = y + nRadius;
+	int nPitch = m_image.GetPitch();
+
+
+	for (int j = y; j < y + nRadius * 2; j++) {
+		for (int i = x; i < x + nRadius * 2; i++) {
+			if (isInPoint(i, j, nCenterX, nCenterY, nRadius))
 			{
-				COLORREF color = m_image.GetPixel(x, y);
-				pDC->SetPixelV(x + origin.x, y + origin.y, color);
+				if (x >= 0 && x < nWidth && y >= 0 && y < nHeight)
+				{
+					int realPitch = abs(nPitch);
+					int index = y* realPitch + x;
+
+					if (nPitch > 0)
+					{
+						fm[index] = nGray;
+					}
+					else
+					{
+						fm[(nHeight - 1 - y) * realPitch + x] = nGray;
+					}
+
+				}
+				fm[j * nPitch + i] = nGray;
 			}
-
+				
 		}
-
 	}
+}
+
+bool CGlimCircleDlg::isInPoint(int i, int j, int nCenterX, int nCenterY, int nRadius)
+{
+	bool bRet = false;
+
+	double dX = i - nCenterX;
+	double dY = j - nCenterY;
+	double dDist = dX * dX + dY * dY;
+
+	if (dDist < nRadius * nRadius) {
+		bRet = true;
+	}
+
+	return bRet;
 }
 
 void CGlimCircleDlg::OnLButtonDown(UINT nFlags, CPoint point)// 다이얼로그 빈공간 찍을때 점 생성
 {
-	int nWidth = 20;
-	int nHeight = 20;
-	int nBpp = 32;
-	int nRadius = min(nWidth / 2, nHeight / 2);
+	if (m_sizeThickness == 0 || m_pointRadius == 0)
+	{
+		return;
+	}
 
-	if (m_image.IsNull() == FALSE) // 점을 다시 찍을때 익셉션 발생하지 않도록 방지 
-		m_image.Destroy();
+	int nGray = 0;
+	int nWidth = m_image.GetWidth();
+	int nHeight = m_image.GetHeight();
+	int nPitch = m_image.GetPitch();
+	int nRadius = m_pointRadius;
+	unsigned char* fm = (unsigned char*)m_image.GetBits();
 
-	m_image.Create(nWidth, nHeight, nBpp);
+	m_bLButtonDown = true;
 
 	m_clicklimit++;
 
-	CDC* dc = GetDC();
-
 	if (m_clicklimit <= 3)
 	{
-		
 		m_pointCollection[m_clicklimit-1] = point;
-		DrawPoint(dc, m_image, point, nRadius);
+		DrawPoint(fm, point.x, point.y, nRadius, nGray);
 
 		if (m_clicklimit == 3)
 		{
@@ -224,10 +272,60 @@ void CGlimCircleDlg::OnLButtonDown(UINT nFlags, CPoint point)// 다이얼로그 
 		}
 	}
 
-	ReleaseDC(dc);
-
+	UpdateDisplay();
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
+
+
+void CGlimCircleDlg::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	m_bLButtonDown = false;
+	CDialogEx::OnLButtonUp(nFlags, point);
+}
+
+void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
+{
+	if (m_bLButtonDown)
+	{
+		for (int i = 0; i < 3; i++)
+		{
+			
+			//int distance = (int)sqrt(pow(point.x - (m_pointCollection[i].x), 2) + pow(point.y - (m_pointCollection[i].y - m_pointRadius), 2));
+			if (isInPoint(point.x,point.y, m_pointCollection[i].x, m_pointCollection[i].y,m_pointRadius))
+			{
+				int nGray = 0;
+				int nWidth = m_image.GetWidth();
+				int nHeight = m_image.GetHeight();
+				int nPitch = m_image.GetPitch();
+				int nRadius = m_pointRadius;
+				unsigned char* fm = (unsigned char*)m_image.GetBits();
+
+				for (int i = 0; i < 3; i++)
+				{
+					DrawPoint(fm, m_pointCollection[i].x, m_pointCollection[i].y, nRadius, 0xff);
+				}
+				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, 0xff);
+				m_pointCollection[i].x = point.x;
+				m_pointCollection[i].y = point.y;
+				for (int i = 0; i < 3; i++)
+				{
+					DrawPoint(fm, m_pointCollection[i].x, m_pointCollection[i].y, nRadius, 0);
+				}
+				
+				CalculateCircleCenter();
+				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, nGray);
+				
+				UpdateDisplay(); 
+			}
+		}
+		
+		// 마우스를 왼쪽 버튼으로 누르고 있을 때만 실행되는 코드
+		
+	}
+
+	CDialogEx::OnMouseMove(nFlags, point);
+}
+
 
 void CGlimCircleDlg::CalculateCircleCenter()
 {
@@ -251,20 +349,130 @@ void CGlimCircleDlg::CalculateCircleCenter()
 	double ux = ((x1 * x1 + y1 * y1) * (y2 - y3) + (x2 * x2 + y2 * y2) * (y3 - y1) + (x3 * x3 + y3 * y3) * (y1 - y2)) / d;
 	double uy = ((x1 * x1 + y1 * y1) * (x3 - x2) + (x2 * x2 + y2 * y2) * (x1 - x3) + (x3 * x3 + y3 * y3) * (x2 - x1)) / d;
 	
-	m_CircleCenterPoint = CPoint(int(round(ux)), int(round(uy)));	
+	
 
-	int nWidth = 20;
-	int nHeight = 20;
-	int nBpp = 32;
-	int nRadius = min(nWidth / 2, nHeight / 2);
+	m_circleRadius = (int)sqrt((ux - x1) * (ux - x1) + (uy - y1) * (uy - y1));
 
-	if (m_image.IsNull() == FALSE) // 점을 다시 찍을때 익셉션 발생하지 않도록 방지 
-		m_image.Destroy();
+	int nWidth = m_image.GetWidth();
+	int nHeight = m_image.GetHeight();
+	int nPitch = m_image.GetPitch();
+	int nGray = 80;
+	unsigned char* fm = (unsigned char*)m_image.GetBits();
 
-	m_image.Create(nWidth, nHeight, nBpp);
+	m_CircleCenterPoint = CPoint(int(round(ux))+3, int(round(uy)+3));
 
-	CDC* dc = GetDC();
+	DrawCircle(fm,m_CircleCenterPoint, m_circleRadius,nGray);
+}
 
-	DrawPoint(dc, m_image, m_CircleCenterPoint, nRadius);
+void CGlimCircleDlg::DrawCircle(unsigned char* fm,CPoint centerPoint,int radius,int nGray)
+{
+	int nPitch = m_image.GetPitch();
 
+	for (int degree = 0; degree < 360; ++degree)
+	{
+		double rad = degree * 3.14/ 180.0; // 각도를 라디안으로 변환
+		int x = static_cast<int>(centerPoint.x + radius * cos(rad));
+		int y = static_cast<int>(centerPoint.y + radius * sin(rad));
+
+		DrawBitmapBySetSize(fm, x,y, m_sizeThickness, nGray);
+	}
+}
+
+void CGlimCircleDlg::DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size,int nGray)
+{
+	int nWidth = m_image.GetWidth();
+	int nHeight = m_image.GetHeight();
+	int nPitch = m_image.GetPitch();
+
+	for (int dx = 0; dx < size; ++dx)
+	{
+		
+		for (int dy = 0; dy < size; ++dy)
+		{
+			int realPitch = abs(nPitch);
+			int dstX = x + dx;
+			int dstY = y + dy;
+
+			if (dstX >= 0 && dstX < nWidth && dstY >= 0 && dstY < nHeight)
+			{
+				int index = dstY * realPitch + dstX;
+
+				if (nPitch > 0)
+				{
+					fm[index] = nGray;
+				}
+				else
+				{
+					fm[(nHeight - 1 - dstY) * realPitch + dstX] = nGray;
+				}
+					
+			}
+		}
+	}
+}
+
+void CGlimCircleDlg::OnBnClickedBtnInit()
+{
+	EraseCircle();
+}
+
+void CGlimCircleDlg::EraseCircle()
+{
+	int nGray = 255;
+	int nWidth = m_image.GetWidth();
+	int nHeight = m_image.GetHeight();
+	int nPitch = m_image.GetPitch();
+	int nRadius = m_pointRadius;
+	unsigned char* fm = (unsigned char*)m_image.GetBits();
+	
+	for (int i = 0; i < 3; i++)
+	{
+		DrawPoint(fm, m_pointCollection[i].x, m_pointCollection[i].y, nRadius, nGray);
+	}
+	
+	DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, nGray);
+
+	//다시 그릴 수 있게 초기화 
+	m_clicklimit = 0;
+
+	for (int i = 0; i < 3; i++)
+	{
+		m_pointCollection[i] = CPoint(0, 0);
+	}
+
+	m_CircleCenterPoint = CPoint(0, 0);
+
+	m_sizeThickness = 0;
+	m_pointRadius = 0;
+	GetDlgItem(IDC_BUTTON_PointSize)->EnableWindow(true);
+	GetDlgItem(IDC_Button_CircleThickness)->EnableWindow(true);
+
+	UpdateDisplay();
+}
+
+void CGlimCircleDlg::OnBnClickedButtonPointsize()// 버튼 크기 조절 
+{
+	CString pointSizeStr;
+	GetDlgItemText(IDC_Edit_PointSize, pointSizeStr);
+	
+	if (pointSizeStr != _T(""))
+	{
+		m_pointRadius = _ttoi(pointSizeStr);
+		SetDlgItemText(IDC_Edit_PointSize, _T(""));
+		GetDlgItem(IDC_BUTTON_PointSize)->EnableWindow(false);
+	}
+	
+}
+
+void CGlimCircleDlg::OnBnClickedButtonCirclethickness()// 점 크기 조절 
+{
+	CString thickSizeStr;
+	GetDlgItemText(IDC_EDIT_CircleThickness, thickSizeStr);
+
+	if (thickSizeStr != _T(""))
+	{
+		m_sizeThickness = _ttoi(thickSizeStr);
+		SetDlgItemText(IDC_EDIT_CircleThickness, _T(""));
+		GetDlgItem(IDC_Button_CircleThickness)->EnableWindow(false);
+	}
 }
