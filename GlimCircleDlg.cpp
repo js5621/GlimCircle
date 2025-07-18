@@ -307,7 +307,6 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 			return;
 		}
 		// 마우스를 왼쪽 버튼으로 누르고 있을 때만 실행되는 코드
-
 		using namespace std::chrono;
 
 		auto now = steady_clock::now();
@@ -317,8 +316,26 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 
 			std::thread thread0(&CGlimCircleDlg::threadDrawCircle, this, point, 0);
 			thread0.detach();
+		}
+		if (isInPoint(point.x, point.y, m_pointCollection[0].x, m_pointCollection[0].y,
+			m_pointRadius))
+		{
+			//m_pointCollection[0].x = point.x;
+			//m_pointCollection[0].x = point.y;
+		}
+
+		else if (isInPoint(point.x, point.y, m_pointCollection[1].x, m_pointCollection[1].y,
+			m_pointRadius))
+		{
 
 		}
+		
+		else if (isInPoint(point.x, point.y, m_pointCollection[2].x, m_pointCollection[2].y,
+			m_pointRadius))
+		{
+
+		}
+		
 	}
 
 	CDialogEx::OnMouseMove(nFlags, point);
@@ -329,35 +346,30 @@ void CGlimCircleDlg::threadDrawCircle(CPoint point,int index)
 	{
 		for (int j = 0; j < 1; j++)
 		{
-			/*if (isInPoint(point.x,point.y, m_pointCollection[index].x, m_pointCollection[index].y,m_pointRadius))
-			{*/
-				m_isCircleMove = true;
+			TRACE("원그리는중");
+			//	int nGray = 0;
+			//	int nWidth = m_image.GetWidth();
+			//	int nHeight = m_image.GetHeight();
+			//	int nPitch = m_image.GetPitch();
+			//	int nRadius = m_pointRadius;
+			//	unsigned char* fm = (unsigned char*)m_image.GetBits();
+			//	DrawPoint(fm, m_pointCollection[].x+point.x, point.y, nRadius, 0xff);
+			//	for (int k = 0; k < 3; k++)
+			//	{
+			//		
+			//	}
+			//	DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, 0xff);
 
-				int nGray = 0;
-				int nWidth = m_image.GetWidth();
-				int nHeight = m_image.GetHeight();
-				int nPitch = m_image.GetPitch();
-				int nRadius = m_pointRadius;
-				unsigned char* fm = (unsigned char*)m_image.GetBits();
 
-				for (int k = 0; k < 3; k++)
-				{
-					DrawPoint(fm, m_pointCollection[k].x, m_pointCollection[k].y, nRadius, 0xff);
-				}
-				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, 0xff);
+			//	for (int l = 0; l < 3; l++)
+			//	{
+			//		DrawPoint(fm, m_pointCollection[l].x, m_pointCollection[l].y, nRadius, 0);
+			//	}
 
-				m_pointCollection[index].x = point.x;
-				m_pointCollection[index].y = point.y;
-
-				for (int l = 0; l < 3; l++)
-				{
-					DrawPoint(fm, m_pointCollection[l].x, m_pointCollection[l].y, nRadius, 0);
-				}
-
-				CalculateCircleCenter();
-				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, nGray);
-				UpdateDisplay();
-			/*}	*/		
+			//	CalculateCircleCenter();
+			//	DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, nGray);
+			//	UpdateDisplay();
+			///*}	*/		
 		}
 	}
 }
