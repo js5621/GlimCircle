@@ -20,6 +20,7 @@ private:
 	int m_pointRadius;
 	int m_sizeThickness;
 	bool m_bLButtonDown;
+	bool m_isCircleMove;
 // 생성입니다.
 public:
 	CGlimCircleDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
@@ -38,10 +39,13 @@ private:
 	void DrawPoint(unsigned char* fm, int x, int y, int nRadius, int nGray);
 	void DrawCircle(unsigned char* fm,CPoint centerPoint, int radius, int nGray);
 	void DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size,int nGray);
+	void threadDrawCircle(CPoint point, int index);
 	void EraseCircle();
 	void SetDrawArea();
 	void UpdateDisplay();
 	bool isInPoint(int i, int j, int nCenterX, int nCenterY, int nRadius);
+	bool IsCollinear(CPoint p1, CPoint p2, CPoint p3);
+	
 
 protected:
 	HICON m_hIcon;

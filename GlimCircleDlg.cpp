@@ -3,6 +3,8 @@
 //
 #include<cmath>
 #include<math.h>
+#include <iostream>
+using namespace std;
 #define _USE_MATH_DEFINES
 
 #include "pch.h"
@@ -14,6 +16,7 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+#include <thread>
 
 
 // 응용 프로그램 정보에 사용되는 CAboutDlg 대화 상자입니다.
@@ -203,6 +206,7 @@ void CGlimCircleDlg::DrawPoint(unsigned char* fm, int x, int y, int nRadius, int
 
 
 	for (int j = y; j < y + nRadius * 2; j++) {
+
 		for (int i = x; i < x + nRadius * 2; i++) {
 			if (isInPoint(i, j, nCenterX, nCenterY, nRadius))
 			{
@@ -222,8 +226,7 @@ void CGlimCircleDlg::DrawPoint(unsigned char* fm, int x, int y, int nRadius, int
 
 				}
 				fm[j * nPitch + i] = nGray;
-			}
-				
+			}		
 		}
 	}
 }
@@ -272,10 +275,19 @@ void CGlimCircleDlg::OnLButtonDown(UINT nFlags, CPoint point)// 다이얼로그 
 		}
 	}
 
+	else
+	{
+		std::thread thread0(&CGlimCircleDlg::threadDrawCircle, this, point, 0);
+		thread0.detach();  // 비동기 실행 (detach 또는 join 중 택1)
+		std::thread thread1(&CGlimCircleDlg::threadDrawCircle, this, point, 1);
+		thread1.detach();
+		std::thread thread2(&CGlimCircleDlg::threadDrawCircle, this, point, 2);
+		thread2.detach();
+	}
+
 	UpdateDisplay();
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
-
 
 void CGlimCircleDlg::OnLButtonUp(UINT nFlags, CPoint point)
 {
@@ -283,16 +295,44 @@ void CGlimCircleDlg::OnLButtonUp(UINT nFlags, CPoint point)
 	CDialogEx::OnLButtonUp(nFlags, point);
 }
 
+std::chrono::steady_clock::time_point m_lastMouseMoveTime;
+
+
 void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 {
 	if (m_bLButtonDown)
 	{
-		for (int i = 0; i < 3; i++)
+		if (m_clicklimit <= 3) // 원이 형성되기전에 점 드래그 방지 
 		{
-			
-			//int distance = (int)sqrt(pow(point.x - (m_pointCollection[i].x), 2) + pow(point.y - (m_pointCollection[i].y - m_pointRadius), 2));
-			if (isInPoint(point.x,point.y, m_pointCollection[i].x, m_pointCollection[i].y,m_pointRadius))
-			{
+			return;
+		}
+		// 마우스를 왼쪽 버튼으로 누르고 있을 때만 실행되는 코드
+
+		using namespace std::chrono;
+
+		auto now = steady_clock::now();
+		if (duration_cast<milliseconds>(now - m_lastMouseMoveTime).count() > 500)
+		{
+			m_lastMouseMoveTime = now;
+
+			std::thread thread0(&CGlimCircleDlg::threadDrawCircle, this, point, 0);
+			thread0.detach();
+
+		}
+	}
+
+	CDialogEx::OnMouseMove(nFlags, point);
+}
+void CGlimCircleDlg::threadDrawCircle(CPoint point,int index)
+{
+	for (int i = 0; i < 10; i++) 
+	{
+		for (int j = 0; j < 1; j++)
+		{
+			/*if (isInPoint(point.x,point.y, m_pointCollection[index].x, m_pointCollection[index].y,m_pointRadius))
+			{*/
+				m_isCircleMove = true;
+
 				int nGray = 0;
 				int nWidth = m_image.GetWidth();
 				int nHeight = m_image.GetHeight();
@@ -300,32 +340,27 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 				int nRadius = m_pointRadius;
 				unsigned char* fm = (unsigned char*)m_image.GetBits();
 
-				for (int i = 0; i < 3; i++)
+				for (int k = 0; k < 3; k++)
 				{
-					DrawPoint(fm, m_pointCollection[i].x, m_pointCollection[i].y, nRadius, 0xff);
+					DrawPoint(fm, m_pointCollection[k].x, m_pointCollection[k].y, nRadius, 0xff);
 				}
 				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, 0xff);
-				m_pointCollection[i].x = point.x;
-				m_pointCollection[i].y = point.y;
-				for (int i = 0; i < 3; i++)
+
+				m_pointCollection[index].x = point.x;
+				m_pointCollection[index].y = point.y;
+
+				for (int l = 0; l < 3; l++)
 				{
-					DrawPoint(fm, m_pointCollection[i].x, m_pointCollection[i].y, nRadius, 0);
+					DrawPoint(fm, m_pointCollection[l].x, m_pointCollection[l].y, nRadius, 0);
 				}
-				
+
 				CalculateCircleCenter();
 				DrawCircle(fm, m_CircleCenterPoint, m_circleRadius, nGray);
-				
-				UpdateDisplay(); 
-			}
+				UpdateDisplay();
+			/*}	*/		
 		}
-		
-		// 마우스를 왼쪽 버튼으로 누르고 있을 때만 실행되는 코드
-		
 	}
-
-	CDialogEx::OnMouseMove(nFlags, point);
 }
-
 
 void CGlimCircleDlg::CalculateCircleCenter()
 {
@@ -333,24 +368,26 @@ void CGlimCircleDlg::CalculateCircleCenter()
 	CPoint point2 = m_pointCollection[1];
 	CPoint point3 = m_pointCollection[2];
 	
+	//외적을 통해 원을 그릴수 있는 거리인지 판단 
+	if (IsCollinear(point1, point2, point3))
+	{
+		return;
+	}
+
 	double x1 = point1.x, y1 = point1.y;
 	double x2 = point2.x, y2 = point2.y;
 	double x3 = point3.x, y3 = point3.y;
 
 	double d = 2 * (x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));// 원의 중심(외심) 계산
 
-	/*if (abs(d) < 1e-10)
+	/*if (fabs(d) < 1e-10)
 	{
-		AfxMessageBox(_T("원을 계산할 수 없습니다.", "오류"));
-
 		return;
 	}*/
 
 	double ux = ((x1 * x1 + y1 * y1) * (y2 - y3) + (x2 * x2 + y2 * y2) * (y3 - y1) + (x3 * x3 + y3 * y3) * (y1 - y2)) / d;
 	double uy = ((x1 * x1 + y1 * y1) * (x3 - x2) + (x2 * x2 + y2 * y2) * (x1 - x3) + (x3 * x3 + y3 * y3) * (x2 - x1)) / d;
 	
-	
-
 	m_circleRadius = (int)sqrt((ux - x1) * (ux - x1) + (uy - y1) * (uy - y1));
 
 	int nWidth = m_image.GetWidth();
@@ -475,4 +512,11 @@ void CGlimCircleDlg::OnBnClickedButtonCirclethickness()// 점 크기 조절
 		SetDlgItemText(IDC_EDIT_CircleThickness, _T(""));
 		GetDlgItem(IDC_Button_CircleThickness)->EnableWindow(false);
 	}
+}
+
+bool CGlimCircleDlg::IsCollinear(CPoint p1, CPoint p2, CPoint p3)
+{
+	// 세 점이 한 직선 위에 있는지 확인 (외적 이용)
+	int cross = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
+	return abs(cross) < 5; // 허용오차 5픽셀
 }
