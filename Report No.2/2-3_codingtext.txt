@@ -1,0 +1,26 @@
+#include <string>
+#include <vector>
+#include <cstdlib> 
+using namespace std;
+
+int solution(vector<vector<int>> dots) {
+    int answer = 0;
+    int dotsLength =4;
+    int dotsElemLength =2;
+    int elem[2];
+    
+    for(int j=0 ; j<dotsElemLength ; j++)
+    {
+        for(int i = 1 ; i <dotsLength;i++)
+        {
+            if(dots[0][j] -dots[i][j] !=0)
+            {
+                elem[j] = abs(dots[0][j] -dots[i][j]);
+                break;
+            }
+        }
+    }
+    
+    answer = elem[0]*elem[1];
+    return answer;
+}

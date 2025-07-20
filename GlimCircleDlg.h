@@ -4,6 +4,15 @@
 
 #pragma once
 
+//원과 관련된 매크로 지정
+#define CIRCLE_POINT_COUNT 3
+#define CIRCLE_FIRST_POINT 0
+#define CIRCLE_SECOND_POINT 1
+#define CIRCLE_THRIRD_POINT 2
+
+//색과 관련된 값지정
+#define COLOR_WHITE 0xff
+#define COLOR_BLACK 0
 
 // CGlimCircleDlg 대화 상자
 class CGlimCircleDlg : public CDialogEx
@@ -39,13 +48,16 @@ private:
 	void DrawPoint(unsigned char* fm, int x, int y, int nRadius, int nGray);
 	void DrawCircle(unsigned char* fm,CPoint centerPoint, int radius, int nGray);
 	void DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size,int nGray);
-	void threadDrawCircle(CPoint point, int index);
+	void threadDrawCircleForRandom();
+	void threadDrawCircle(CPoint touchPoint, CPoint* circlePoint);
 	void EraseCircle();
+	void EraseWhite(unsigned char* fm, int nGray);
 	void SetDrawArea();
+	void ShowPointText(int index, CPoint point);
 	void UpdateDisplay();
 	bool isInPoint(int i, int j, int nCenterX, int nCenterY, int nRadius);
 	bool IsCollinear(CPoint p1, CPoint p2, CPoint p3);
-	
+
 
 protected:
 	HICON m_hIcon;
@@ -66,4 +78,5 @@ public:
 	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
 	CEdit m_CEditPointSize;
 	CEdit m_CEditCircleThickness;
+	afx_msg void OnBnClickedButtonCircleRandomMove();
 };

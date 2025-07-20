@@ -1,0 +1,14 @@
+#include <string>
+#include <vector>
+
+using namespace std;
+
+int solution(int n, int k) {
+    int answer = 0;
+    int yangValue = 12000;
+    int umValue =2000;
+    int serviceCount = n/10;
+    
+    answer = yangValue*n+umValue*k-umValue*serviceCount;
+    return answer;
+}
