@@ -29,25 +29,25 @@ private:
 	int m_pointRadius;
 	int m_sizeThickness;
 	bool m_bLButtonDown;
-	bool m_isCircleMove;
-// 생성입니다.
+	bool m_isCircleMove[CIRCLE_POINT_COUNT];
+	// 생성입니다.
 public:
 	CGlimCircleDlg(CWnd* pParent = nullptr);	// 표준 생성자입니다.
 
-// 대화 상자 데이터입니다.
+	// 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_GLIMCIRCLE_DIALOG };
 #endif
-	protected:
+protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV 지원입니다.
 
 
-// 구현입니다.
+	// 구현입니다.
 private:
 	void CalculateCircleCenter();
 	void DrawPoint(unsigned char* fm, int x, int y, int nRadius, int nGray);
-	void DrawCircle(unsigned char* fm,CPoint centerPoint, int radius, int nGray);
-	void DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size,int nGray);
+	void DrawCircle(unsigned char* fm, CPoint centerPoint, int radius, int nGray);
+	void DrawBitmapBySetSize(unsigned char* fm, int x, int y, int size, int nGray);
 	void threadDrawCircleForRandom();
 	void threadDrawCircle(CPoint touchPoint, CPoint* circlePoint);
 	void EraseCircle();

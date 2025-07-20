@@ -316,23 +316,38 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 		auto now = steady_clock::now();
 
 
+
 		if (isInPoint(point.x, point.y, m_pointCollection[CIRCLE_FIRST_POINT].x, m_pointCollection[CIRCLE_FIRST_POINT].y,
-			m_pointRadius))
+			2 * m_pointRadius))
 		{
+			if (m_isCircleMove[CIRCLE_FIRST_POINT])
+			{
+				return;
+			}
+
+			m_isCircleMove[CIRCLE_FIRST_POINT] = true;
+
 			if (duration_cast<milliseconds>(now - m_lastMouseMoveTime).count() > 500)
 			{
 				m_lastMouseMoveTime = now;
 
 				std::thread threadFirstPointMove(&CGlimCircleDlg::threadDrawCircle, this, point, &m_pointCollection[CIRCLE_FIRST_POINT]);
-
 				threadFirstPointMove.detach();
 			}
 
+			m_isCircleMove[CIRCLE_FIRST_POINT] = false;
 		}
 
 		if (isInPoint(point.x, point.y, m_pointCollection[CIRCLE_SECOND_POINT].x, m_pointCollection[CIRCLE_SECOND_POINT].y,
-			m_pointRadius))
+			2 * m_pointRadius))
 		{
+			if (m_isCircleMove[CIRCLE_SECOND_POINT])
+			{
+				return;
+			}
+
+			m_isCircleMove[CIRCLE_SECOND_POINT] = true;
+
 			if (duration_cast<milliseconds>(now - m_lastMouseMoveTime).count() > 500)
 			{
 				m_lastMouseMoveTime = now;
@@ -341,11 +356,20 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 
 				threadSecondPointMove.detach();
 			}
+
+			m_isCircleMove[CIRCLE_SECOND_POINT] = false;
 		}
 
 		if (isInPoint(point.x, point.y, m_pointCollection[CIRCLE_THRIRD_POINT].x, m_pointCollection[CIRCLE_THRIRD_POINT].y,
-			m_pointRadius))
+			2 * m_pointRadius))
 		{
+			if (m_isCircleMove[CIRCLE_THRIRD_POINT])
+			{
+				return;
+			}
+
+			m_isCircleMove[CIRCLE_THRIRD_POINT] = true;
+
 			if (duration_cast<milliseconds>(now - m_lastMouseMoveTime).count() > 500)
 			{
 				m_lastMouseMoveTime = now;
@@ -354,6 +378,8 @@ void CGlimCircleDlg::OnMouseMove(UINT nFlags, CPoint point)
 
 				threadThirdPointMove.detach();
 			}
+
+			m_isCircleMove[CIRCLE_THRIRD_POINT] = false;
 		}
 	}
 
